@@ -214,7 +214,7 @@ export function UsersPage() {
         <Table>
           <TableHeader>
             <TableRow className="border-[#e8e4ff] hover:bg-transparent">
-              <TableHead className="text-[9.5px] font-semibold tracking-[1.14px] text-[rgba(27,22,63,0.5)] uppercase">
+              <TableHead className="pl-[22px] text-[9.5px] font-semibold tracking-[1.14px] text-[rgba(27,22,63,0.5)] uppercase">
                 회원 ID
               </TableHead>
               <TableHead className="text-[9.5px] font-semibold tracking-[1.14px] text-[rgba(27,22,63,0.5)] uppercase">
@@ -237,7 +237,7 @@ export function UsersPage() {
           <TableBody>
             {filtered.map((member) => (
               <TableRow key={member.id} className="border-[#efedfa]">
-                <TableCell className="text-[11px] text-[rgba(27,22,63,0.55)]">{member.id}</TableCell>
+                <TableCell className="pl-[22px] text-[11px] text-[rgba(27,22,63,0.55)]">{member.id}</TableCell>
                 <TableCell>
                   <div className="text-[12.5px] font-semibold text-[#201e1d]">{member.nickname}</div>
                   <div className="text-[10.5px] text-[rgba(27,22,63,0.5)]">{member.email}</div>

@@ -188,7 +188,7 @@ export function EventsPage() {
           <Table>
             <TableHeader>
               <TableRow className="border-[#e8e4ff] hover:bg-transparent">
-                <TableHead className="text-[9.5px] font-semibold tracking-[1.14px] text-[rgba(27,22,63,0.5)] uppercase">
+                <TableHead className="pl-[22px] text-[9.5px] font-semibold tracking-[1.14px] text-[rgba(27,22,63,0.5)] uppercase">
                   Event ID
                 </TableHead>
                 <TableHead className="text-[9.5px] font-semibold tracking-[1.14px] text-[rgba(27,22,63,0.5)] uppercase">
@@ -209,7 +209,7 @@ export function EventsPage() {
             <TableBody>
               {filtered.map((event) => (
                 <TableRow key={event.id} className="border-[#efedfa]">
-                  <TableCell className="text-[11px] text-[rgba(27,22,63,0.55)]">{event.id}</TableCell>
+                  <TableCell className="pl-[22px] text-[11px] text-[rgba(27,22,63,0.55)]">{event.id}</TableCell>
                   <TableCell>
                     <div className="text-[12.5px] font-semibold text-[#201e1d]">{event.name}</div>
                     <div className="text-[10.5px] text-[rgba(27,22,63,0.5)]">{event.meta}</div>

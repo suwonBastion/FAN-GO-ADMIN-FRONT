@@ -199,7 +199,7 @@ export function PlacesPage() {
           <Table>
             <TableHeader>
               <TableRow className="border-[#e8e4ff] hover:bg-transparent">
-                <TableHead className="text-[9.5px] font-semibold tracking-[1.14px] text-[rgba(27,22,63,0.5)] uppercase">
+                <TableHead className="pl-[22px] text-[9.5px] font-semibold tracking-[1.14px] text-[rgba(27,22,63,0.5)] uppercase">
                   POI ID
                 </TableHead>
                 <TableHead className="text-[9.5px] font-semibold tracking-[1.14px] text-[rgba(27,22,63,0.5)] uppercase">
@@ -227,7 +227,7 @@ export function PlacesPage() {
                     selectedId === place.id && 'bg-[#f8f7ff]',
                   )}
                 >
-                  <TableCell className="text-[11px] text-[rgba(27,22,63,0.55)]">
+                  <TableCell className="pl-[22px] text-[11px] text-[rgba(27,22,63,0.55)]">
                     {place.id}
                   </TableCell>
                   <TableCell>
