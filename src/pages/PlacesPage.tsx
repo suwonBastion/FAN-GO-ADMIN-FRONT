@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,6 +31,7 @@ function formatEventId(no: number) {
 }
 
 const PAGE_SIZE = 10
+const PAGE_WINDOW = 10
 
 export function PlacesPage() {
   const [search, setSearch] = useState('')
@@ -68,6 +70,13 @@ export function PlacesPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const currentPage = Math.min(page, totalPages)
   const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+
+  const windowStart = Math.floor((currentPage - 1) / PAGE_WINDOW) * PAGE_WINDOW + 1
+  const windowEnd = Math.min(windowStart + PAGE_WINDOW - 1, totalPages)
+  const windowPages = Array.from(
+    { length: windowEnd - windowStart + 1 },
+    (_, i) => windowStart + i,
+  )
 
   return (
     <div className="flex h-full flex-col">
@@ -197,38 +206,78 @@ export function PlacesPage() {
         </div>
 
         {!isError && totalPages > 1 && (
-          <div className="flex shrink-0 items-center justify-center gap-1 border-t border-[#e8e4ff] py-2.5">
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-2 py-1 text-[12px] text-[rgba(27,22,63,0.55)] disabled:opacity-30"
-            >
-              이전
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+          <div className="flex shrink-0 items-center justify-center gap-4 border-t border-[#e8e4ff] py-3">
+            <span className="text-[11px] text-[rgba(27,22,63,0.45)]">
+              {currentPage} / {totalPages} 페이지
+            </span>
+            <div className="flex items-center gap-0.5">
               <button
-                key={p}
                 type="button"
-                onClick={() => setPage(p)}
-                className={cn(
-                  'size-7 rounded-full text-[12px] font-semibold',
-                  p === currentPage
-                    ? 'bg-[#6d57fc] text-white'
-                    : 'text-[rgba(27,22,63,0.55)] hover:bg-[#f8f7ff]',
-                )}
+                onClick={() => setPage(1)}
+                disabled={currentPage === 1}
+                aria-label="첫 페이지"
+                className="flex size-7 items-center justify-center rounded-full text-[rgba(27,22,63,0.55)] transition-colors hover:bg-[#f2f0ff] disabled:pointer-events-none disabled:opacity-25"
               >
-                {p}
+                <ChevronsLeft className="size-3.5" />
               </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="px-2 py-1 text-[12px] text-[rgba(27,22,63,0.55)] disabled:opacity-30"
-            >
-              다음
-            </button>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                aria-label="이전 페이지"
+                className="flex size-7 items-center justify-center rounded-full text-[rgba(27,22,63,0.55)] transition-colors hover:bg-[#f2f0ff] disabled:pointer-events-none disabled:opacity-25"
+              >
+                <ChevronLeft className="size-3.5" />
+              </button>
+
+              {windowStart > 1 && (
+                <span className="flex size-7 items-center justify-center text-[12px] text-[rgba(27,22,63,0.35)]">
+                  ···
+                </span>
+              )}
+
+              {windowPages.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPage(p)}
+                  aria-current={p === currentPage ? 'page' : undefined}
+                  className={cn(
+                    'flex size-7 items-center justify-center rounded-full text-[12px] font-semibold transition-colors',
+                    p === currentPage
+                      ? 'bg-[#6d57fc] text-white shadow-[0px_2px_6px_0px_rgba(109,87,252,0.4)]'
+                      : 'text-[rgba(27,22,63,0.55)] hover:bg-[#f2f0ff]',
+                  )}
+                >
+                  {p}
+                </button>
+              ))}
+
+              {windowEnd < totalPages && (
+                <span className="flex size-7 items-center justify-center text-[12px] text-[rgba(27,22,63,0.35)]">
+                  ···
+                </span>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                aria-label="다음 페이지"
+                className="flex size-7 items-center justify-center rounded-full text-[rgba(27,22,63,0.55)] transition-colors hover:bg-[#f2f0ff] disabled:pointer-events-none disabled:opacity-25"
+              >
+                <ChevronRight className="size-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setPage(totalPages)}
+                disabled={currentPage === totalPages}
+                aria-label="마지막 페이지"
+                className="flex size-7 items-center justify-center rounded-full text-[rgba(27,22,63,0.55)] transition-colors hover:bg-[#f2f0ff] disabled:pointer-events-none disabled:opacity-25"
+              >
+                <ChevronsRight className="size-3.5" />
+              </button>
+            </div>
           </div>
         )}
         </div>
