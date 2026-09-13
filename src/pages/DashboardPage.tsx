@@ -77,13 +77,13 @@ export function DashboardPage() {
         {
           label: '누적 가입자',
           value: (data.total_users ?? 0).toLocaleString(),
-          delta: `+${data.new_users_period ?? 0} / 7일`,
+          delta: `+${data.new_users_period ?? 0} / ${period}`,
           tone: 'delta' as const,
         },
         {
           label: '생성 동선',
           value: (data.total_routes ?? 0).toLocaleString(),
-          delta: `+${data.new_routes_period ?? 0} / 7일`,
+          delta: `+${data.new_routes_period ?? 0} / ${period}`,
           tone: 'delta' as const,
         },
         {
