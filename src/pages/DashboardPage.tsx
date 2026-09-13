@@ -12,14 +12,40 @@ const periodToDays: Record<Period, number | undefined> = {
   전체: undefined,
 }
 
-interface DashboardResponse {
+interface DailyRoute {
+  date: string
+  count: number
+}
+
+interface RawDashboardResponse {
   total_users?: number
   new_users_period?: number
   total_routes?: number
   new_routes_period?: number
   avg_satisfaction?: number | null
   response_count?: number
-  daily_routes?: { date: string; count: number }[]
+  daily_routes?: DailyRoute[] | string
+}
+
+interface DashboardResponse extends Omit<RawDashboardResponse, 'daily_routes'> {
+  daily_routes: DailyRoute[]
+}
+
+function normalizeDashboard(raw: unknown): DashboardResponse | undefined {
+  const record = Array.isArray(raw) ? raw[0] : raw
+  if (!record || typeof record !== 'object') return undefined
+
+  const payload = record as RawDashboardResponse
+  const dailyRoutesRaw = payload.daily_routes
+  const dailyRoutes =
+    typeof dailyRoutesRaw === 'string'
+      ? (JSON.parse(dailyRoutesRaw) as DailyRoute[])
+      : (dailyRoutesRaw ?? [])
+
+  return {
+    ...payload,
+    daily_routes: [...dailyRoutes].sort((a, b) => a.date.localeCompare(b.date)),
+  }
 }
 
 const fandomShares = [
@@ -39,10 +65,10 @@ export function DashboardPage() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['dashboard', period],
     queryFn: async () => {
-      const { data } = await api.get<DashboardResponse>('/adminlogin/dashboard', {
+      const { data } = await api.get<unknown>('/adminlogin/dashboard', {
         params: { route_one_day: periodToDays[period] },
       })
-      return data
+      return normalizeDashboard(data)
     },
   })
 
