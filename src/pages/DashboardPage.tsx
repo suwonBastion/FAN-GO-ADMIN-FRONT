@@ -66,7 +66,7 @@ export function DashboardPage() {
     queryKey: ['dashboard', period],
     queryFn: async () => {
       const { data } = await api.get<unknown>('/adminlogin/dashboard', {
-        params: { route_one_day: periodToDays[period] },
+        params: { days: periodToDays[period] },
       })
       return normalizeDashboard(data)
     },
