@@ -2,7 +2,6 @@ import type { ReactNode } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AdminLayout } from '@/layouts/AdminLayout'
 import { DashboardPage } from '@/pages/DashboardPage'
-import { EventsPage } from '@/pages/EventsPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { PlaceholderPage } from '@/pages/PlaceholderPage'
 import { PlacesPage } from '@/pages/PlacesPage'
@@ -41,7 +40,7 @@ export const router = createBrowserRouter([
       { index: true, element: <DashboardPage /> },
       { path: 'users', element: <UsersPage /> },
       { path: 'places', element: <PlacesPage /> },
-      { path: 'events', element: <EventsPage /> },
+      { path: 'events', element: <Navigate to="/places" replace /> },
       { path: 'place-score', element: <PlaceholderPage title="장소 스코어" /> },
       { path: 'feedback', element: <PlaceholderPage title="피드백 관리" /> },
       { path: 'partners', element: <PlaceholderPage title="제휴처 관리" /> },

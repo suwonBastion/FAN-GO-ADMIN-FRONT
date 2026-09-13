@@ -22,8 +22,7 @@ const navGroups: NavGroup[] = [
     label: '운영',
     items: [
       { code: 'AD-01', label: '대시보드', to: '/' },
-      { code: 'AD-02', label: '장소 데이터', to: '/places' },
-      { code: 'AD-03', label: '이벤트 관리', to: '/events' },
+      { code: 'AD-02', label: '통합 데이터', to: '/places' },
       { code: 'AD-09', label: '회원 · 권한', to: '/users' },
     ],
   },
