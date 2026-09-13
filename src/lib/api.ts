@@ -1,5 +1,7 @@
 import axios from 'axios'
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8001',
+  baseURL:
+    import.meta.env.VITE_API_BASE_URL ??
+    'http://ec2-54-180-95-40.ap-northeast-2.compute.amazonaws.com:8001',
 })
