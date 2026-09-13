@@ -97,6 +97,12 @@ export function DashboardPage() {
 
   const dailyRoutes = data?.daily_routes ?? []
   const maxCount = Math.max(1, ...dailyRoutes.map((d) => d.count))
+  const topDates = new Set(
+    [...dailyRoutes]
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 2)
+      .map((d) => d.date),
+  )
 
   return (
     <div className="flex h-full flex-col">
@@ -172,15 +178,28 @@ export function DashboardPage() {
             <span className="text-[11px] text-[rgba(27,22,63,0.5)]">최근 7일</span>
           </div>
           <div className="flex h-[300px] items-end justify-center gap-2 pt-4">
-            {dailyRoutes.map(({ date, count }) => (
-              <div key={date} className="flex h-full w-9 flex-col items-center justify-end gap-1.5">
+            {dailyRoutes.map(({ date, count }) => {
+              const isTop = topDates.has(date)
+              return (
                 <div
-                  className="w-full rounded-t-sm bg-[#0c0a1c]"
-                  style={{ height: `${Math.max(2, (count / maxCount) * 100)}%` }}
-                />
-                <span className="text-[9px] text-[rgba(27,22,63,0.45)]">{formatDay(date)}</span>
-              </div>
-            ))}
+                  key={date}
+                  className="flex h-full w-9 flex-col items-center justify-end gap-1.5"
+                >
+                  <div
+                    className={cn('w-full rounded-t-sm', isTop ? 'bg-[#6d57fc]' : 'bg-[#0c0a1c]')}
+                    style={{ height: `${Math.max(2, (count / maxCount) * 100)}%` }}
+                  />
+                  <span
+                    className={cn(
+                      'text-[9px]',
+                      isTop ? 'font-semibold text-[#ae1800]' : 'text-[rgba(27,22,63,0.45)]',
+                    )}
+                  >
+                    {formatDay(date)}
+                  </span>
+                </div>
+              )
+            })}
           </div>
         </div>
 
