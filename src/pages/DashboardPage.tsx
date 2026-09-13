@@ -13,13 +13,13 @@ const periodToDays: Record<Period, number | undefined> = {
 }
 
 interface DashboardResponse {
-  total_users: number
-  new_users_period: number
-  total_routes: number
-  new_routes_period: number
-  avg_satisfaction: number | null
-  response_count: number
-  daily_routes: { date: string; count: number }[]
+  total_users?: number
+  new_users_period?: number
+  total_routes?: number
+  new_routes_period?: number
+  avg_satisfaction?: number | null
+  response_count?: number
+  daily_routes?: { date: string; count: number }[]
 }
 
 const fandomShares = [
@@ -50,26 +50,27 @@ export function DashboardPage() {
     ? [
         {
           label: '누적 가입자',
-          value: data.total_users.toLocaleString(),
-          delta: `+${data.new_users_period} / 7일`,
+          value: (data.total_users ?? 0).toLocaleString(),
+          delta: `+${data.new_users_period ?? 0} / 7일`,
           tone: 'delta' as const,
         },
         {
           label: '생성 동선',
-          value: data.total_routes.toLocaleString(),
-          delta: `+${data.new_routes_period} / 7일`,
+          value: (data.total_routes ?? 0).toLocaleString(),
+          delta: `+${data.new_routes_period ?? 0} / 7일`,
           tone: 'delta' as const,
         },
         {
           label: '피드백 만족도',
           value: data.avg_satisfaction != null ? data.avg_satisfaction.toFixed(2) : '-',
-          delta: `응답 ${data.response_count.toLocaleString()}건`,
+          delta: `응답 ${(data.response_count ?? 0).toLocaleString()}건`,
           tone: 'muted' as const,
         },
       ]
     : []
 
-  const maxCount = data ? Math.max(1, ...data.daily_routes.map((d) => d.count)) : 1
+  const dailyRoutes = data?.daily_routes ?? []
+  const maxCount = Math.max(1, ...dailyRoutes.map((d) => d.count))
 
   return (
     <div className="flex h-full flex-col">
@@ -145,7 +146,7 @@ export function DashboardPage() {
             <span className="text-[11px] text-[rgba(27,22,63,0.5)]">최근 7일</span>
           </div>
           <div className="flex h-[300px] items-end justify-center gap-2 pt-4">
-            {data?.daily_routes.map(({ date, count }) => (
+            {dailyRoutes.map(({ date, count }) => (
               <div key={date} className="flex h-full w-9 flex-col items-center justify-end gap-1.5">
                 <div
                   className="w-full rounded-t-sm bg-[#0c0a1c]"
