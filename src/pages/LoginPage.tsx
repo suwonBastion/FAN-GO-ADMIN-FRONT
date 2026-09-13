@@ -3,18 +3,43 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { api } from '@/lib/api'
 import { useAuthStore } from '@/store/useAuthStore'
+
+interface AdminLoginResponse {
+  msg: 'OK' | 'FAILED'
+}
 
 export function LoginPage() {
   const navigate = useNavigate()
   const login = useAuthStore((state) => state.login)
   const [userName, setUserName] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
-    login({ id: userName, email: userName, name: userName }, 'dev-access-token')
-    navigate('/', { replace: true })
+    setError(null)
+    setIsSubmitting(true)
+    try {
+      const { data } = await api.post<AdminLoginResponse>('/adminlogin/login', {
+        login_id: userName,
+        login_pw: password,
+      })
+
+      if (data.msg !== 'OK') {
+        setError('아이디 또는 비밀번호가 올바르지 않습니다.')
+        return
+      }
+
+      login({ id: userName, email: userName, name: userName })
+      navigate('/', { replace: true })
+    } catch {
+      setError('로그인 요청에 실패했습니다. 잠시 후 다시 시도해주세요.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -55,11 +80,13 @@ export function LoginPage() {
               required
             />
           </div>
+          {error && <p className="text-xs text-[#ae1800]">{error}</p>}
           <Button
             type="submit"
+            disabled={isSubmitting}
             className="h-[43px] w-full rounded-none bg-[#6d5cff] font-bold tracking-[0.28px] text-white hover:bg-[#6d5cff]/90"
           >
-            로그인
+            {isSubmitting ? '로그인 중...' : '로그인'}
           </Button>
         </form>
       </div>

@@ -1,38 +1,26 @@
+import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
+import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 const periods = ['7일', '30일', '전체'] as const
 type Period = (typeof periods)[number]
 
-interface DailyTrip {
-  day: string
-  value: number
-  variant: 'default' | 'concert' | 'upcoming'
+const periodToDays: Record<Period, number | undefined> = {
+  '7일': 7,
+  '30일': 30,
+  전체: undefined,
 }
 
-const dailyTrips: DailyTrip[] = [
-  { day: '13', value: 38, variant: 'default' },
-  { day: '14', value: 44, variant: 'default' },
-  { day: '15', value: 35, variant: 'default' },
-  { day: '16', value: 52, variant: 'default' },
-  { day: '17', value: 61, variant: 'default' },
-  { day: '18', value: 87, variant: 'concert' },
-  { day: '19', value: 95, variant: 'concert' },
-  { day: '20', value: 57, variant: 'default' },
-  { day: '21', value: 49, variant: 'default' },
-  { day: '22', value: 46, variant: 'default' },
-  { day: '23', value: 58, variant: 'default' },
-  { day: '24', value: 66, variant: 'default' },
-  { day: '25', value: 72, variant: 'default' },
-  { day: '26', value: 41, variant: 'upcoming' },
-]
-
-const kpis = [
-  { label: '누적 가입자', value: '3,482', delta: '+218 / 7일', tone: 'delta' as const },
-  { label: '생성 동선', value: '5,107', delta: '+412 / 7일', tone: 'delta' as const },
-  { label: '피드백 만족도', value: '4.31', delta: '응답 1,204건', tone: 'muted' as const },
-  { label: '알고리즘 평균 응답', value: '15.8', suffix: 's', delta: '상한 20s', tone: 'muted' as const },
-]
+interface DashboardResponse {
+  total_users: number
+  new_users_period: number
+  total_routes: number
+  new_routes_period: number
+  avg_satisfaction: number | null
+  response_count: number
+  daily_routes: { date: string; count: number }[]
+}
 
 const fandomShares = [
   { label: 'BTS', percent: 38, highlight: true },
@@ -40,8 +28,48 @@ const fandomShares = [
   { label: 'BLACKPINK', percent: 22, highlight: false },
 ]
 
+function formatDay(date: string) {
+  const day = date.split('-')[2]
+  return day ? String(Number(day)) : date
+}
+
 export function DashboardPage() {
   const [period, setPeriod] = useState<Period>('7일')
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['dashboard', period],
+    queryFn: async () => {
+      const { data } = await api.get<DashboardResponse>('/adminlogin/dashboard', {
+        params: { route_one_day: periodToDays[period] },
+      })
+      return data
+    },
+  })
+
+  const kpis = data
+    ? [
+        {
+          label: '누적 가입자',
+          value: data.total_users.toLocaleString(),
+          delta: `+${data.new_users_period} / 7일`,
+          tone: 'delta' as const,
+        },
+        {
+          label: '생성 동선',
+          value: data.total_routes.toLocaleString(),
+          delta: `+${data.new_routes_period} / 7일`,
+          tone: 'delta' as const,
+        },
+        {
+          label: '피드백 만족도',
+          value: data.avg_satisfaction != null ? data.avg_satisfaction.toFixed(2) : '-',
+          delta: `응답 ${data.response_count.toLocaleString()}건`,
+          tone: 'muted' as const,
+        },
+      ]
+    : []
+
+  const maxCount = data ? Math.max(1, ...data.daily_routes.map((d) => d.count)) : 1
 
   return (
     <div className="flex h-full flex-col">
@@ -69,32 +97,43 @@ export function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 border-b border-[#e8e4ff] sm:grid-cols-4">
-        {kpis.map((kpi, index) => (
-          <div
-            key={kpi.label}
-            className={cn(
-              'space-y-0.5 px-4 py-3.5',
-              index < kpis.length - 1 && 'border-r border-[#e8e4ff]',
-            )}
-          >
-            <p className="text-[9.5px] font-semibold tracking-[1.14px] text-[rgba(27,22,63,0.5)]">
-              {kpi.label}
-            </p>
-            <p className="pt-1 text-3xl font-bold text-[#201e1d]">
-              {kpi.value}
-              {kpi.suffix && <span className="text-[15px]">{kpi.suffix}</span>}
-            </p>
-            <p
-              className={cn(
-                'text-[11px]',
-                kpi.tone === 'delta' ? 'text-[#ae1800]' : 'text-[rgba(27,22,63,0.5)]',
-              )}
-            >
-              {kpi.delta}
-            </p>
-          </div>
-        ))}
+      <div className="flex h-[99px] border-b border-[#e8e4ff] pl-1.5">
+        {isError && (
+          <p className="px-4 py-3.5 text-[13px] text-[#ae1800]">
+            대시보드 통계를 불러오지 못했습니다.
+          </p>
+        )}
+        {!isError &&
+          (isLoading
+            ? Array.from({ length: 3 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="w-[196px] shrink-0 space-y-0.5 border-r border-[#e8e4ff] px-4 py-3.5"
+                >
+                  <p className="text-[9.5px] font-semibold tracking-[1.14px] text-[rgba(27,22,63,0.5)]">
+                    불러오는 중...
+                  </p>
+                </div>
+              ))
+            : kpis.map((kpi) => (
+                <div
+                  key={kpi.label}
+                  className="w-[196px] shrink-0 space-y-0.5 border-r border-[#e8e4ff] px-4 py-3.5"
+                >
+                  <p className="text-[9.5px] font-semibold tracking-[1.14px] text-[rgba(27,22,63,0.5)]">
+                    {kpi.label}
+                  </p>
+                  <p className="pt-1 text-3xl font-bold text-[#201e1d]">{kpi.value}</p>
+                  <p
+                    className={cn(
+                      'text-[11px]',
+                      kpi.tone === 'delta' ? 'text-[#ae1800]' : 'text-[rgba(27,22,63,0.5)]',
+                    )}
+                  >
+                    {kpi.delta}
+                  </p>
+                </div>
+              )))}
       </div>
 
       <div className="flex flex-1 flex-col lg:flex-row">
@@ -103,28 +142,16 @@ export function DashboardPage() {
             <h2 className="text-sm font-semibold tracking-[-0.21px] text-[#201e1d]">
               일별 동선 생성
             </h2>
-            <span className="text-[11px] text-[rgba(27,22,63,0.5)]">최근 14일 · 콘서트일 표시</span>
+            <span className="text-[11px] text-[rgba(27,22,63,0.5)]">최근 7일</span>
           </div>
           <div className="flex h-[300px] items-end justify-center gap-2 pt-4">
-            {dailyTrips.map(({ day, value, variant }) => (
-              <div key={day} className="flex h-full w-9 flex-col items-center justify-end gap-1.5">
+            {data?.daily_routes.map(({ date, count }) => (
+              <div key={date} className="flex h-full w-9 flex-col items-center justify-end gap-1.5">
                 <div
-                  className={cn(
-                    'w-full rounded-t-sm',
-                    variant === 'concert' && 'bg-[#6d57fc]',
-                    variant === 'default' && 'bg-[#0c0a1c]',
-                    variant === 'upcoming' && 'bg-[rgba(27,22,63,0.3)]',
-                  )}
-                  style={{ height: `${value}%` }}
+                  className="w-full rounded-t-sm bg-[#0c0a1c]"
+                  style={{ height: `${Math.max(2, (count / maxCount) * 100)}%` }}
                 />
-                <span
-                  className={cn(
-                    'text-[9px]',
-                    variant === 'concert' ? 'font-semibold text-[#ae1800]' : 'text-[rgba(27,22,63,0.45)]',
-                  )}
-                >
-                  {day}
-                </span>
+                <span className="text-[9px] text-[rgba(27,22,63,0.45)]">{formatDay(date)}</span>
               </div>
             ))}
           </div>

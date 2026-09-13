@@ -36,10 +36,7 @@ const navGroups: NavGroup[] = [
   },
   {
     label: '제휴 · 인프라',
-    items: [
-      { code: 'AD-06', label: '제휴처 관리', to: '/partners' },
-      { code: 'AD-08', label: '외부 API 상태', to: '/api-status' },
-    ],
+    items: [{ code: 'AD-08', label: '외부 API 상태', to: '/api-status' }],
   },
 ]
 
