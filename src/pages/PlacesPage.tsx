@@ -29,10 +29,13 @@ function formatEventId(no: number) {
   return `E-${String(no).padStart(4, '0')}`
 }
 
+const PAGE_SIZE = 10
+
 export function PlacesPage() {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('all')
   const [selectedNo, setSelectedNo] = useState<number | null>(null)
+  const [page, setPage] = useState(1)
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['eventlist'],
@@ -62,6 +65,10 @@ export function PlacesPage() {
   const countFor = (key: string) =>
     key === 'all' ? events.length : events.filter((event) => event.op_status_nm === key).length
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-end justify-between gap-4 border-b border-[#e8e4ff] px-[22px] pt-4 pb-3.5">
@@ -72,7 +79,10 @@ export function PlacesPage() {
         <div className="flex items-center gap-2">
           <Input
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(event) => {
+              setSearch(event.target.value)
+              setPage(1)
+            }}
             placeholder="장소명 · 주소 검색"
             className="h-9 w-[210px] rounded-none border-[rgba(32,30,29,0.4)] bg-[#eae9e9]"
           />
@@ -86,7 +96,10 @@ export function PlacesPage() {
             <button
               key={key}
               type="button"
-              onClick={() => setStatus(key)}
+              onClick={() => {
+                setStatus(key)
+                setPage(1)
+              }}
               className={cn(
                 'border-b-[3px] px-3.5 py-2.5 text-[11.5px] font-semibold',
                 status === key
@@ -102,6 +115,7 @@ export function PlacesPage() {
       </div>
 
       <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 flex-col overflow-hidden">
         <div className="flex-1 overflow-auto">
           {isError ? (
             <p className="px-[22px] py-6 text-[13px] text-[#ae1800]">
@@ -142,7 +156,7 @@ export function PlacesPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filtered.map((event) => (
+                  paginated.map((event) => (
                     <TableRow
                       key={event.event_no}
                       onClick={() => setSelectedNo(event.event_no)}
@@ -180,6 +194,43 @@ export function PlacesPage() {
               </TableBody>
             </Table>
           )}
+        </div>
+
+        {!isError && totalPages > 1 && (
+          <div className="flex shrink-0 items-center justify-center gap-1 border-t border-[#e8e4ff] py-2.5">
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-2 py-1 text-[12px] text-[rgba(27,22,63,0.55)] disabled:opacity-30"
+            >
+              이전
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setPage(p)}
+                className={cn(
+                  'size-7 rounded-full text-[12px] font-semibold',
+                  p === currentPage
+                    ? 'bg-[#6d57fc] text-white'
+                    : 'text-[rgba(27,22,63,0.55)] hover:bg-[#f8f7ff]',
+                )}
+              >
+                {p}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-2 py-1 text-[12px] text-[rgba(27,22,63,0.55)] disabled:opacity-30"
+            >
+              다음
+            </button>
+          </div>
+        )}
         </div>
 
         <div className="w-[306px] shrink-0 space-y-4 overflow-auto border-l-2 border-[rgba(32,30,29,0.4)] px-[18px] py-4">
