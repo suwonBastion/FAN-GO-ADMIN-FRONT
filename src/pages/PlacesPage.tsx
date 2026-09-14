@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -28,7 +28,11 @@ interface EventListItem {
   group_nm: string | null
   review_avg?: number | null
   rating?: number | null
+  memo?: string | null
 }
+
+const typeSegments = ['이벤트', '성지', '관광지']
+const statusSegments = ['운영', '검토 대기', '종료']
 
 function formatEventId(no: number) {
   return `E-${String(no).padStart(4, '0')}`
@@ -332,68 +336,121 @@ export function PlacesPage() {
           )}
         </div>
 
-        <div className="flex w-[306px] shrink-0 flex-col overflow-hidden border-l-2 border-[rgba(32,30,29,0.4)]">
-          <div className="px-[18px] pt-4">
-            <p className="text-[10px] font-semibold tracking-[1.4px] text-[#6d57fc]">선택 항목</p>
-          </div>
+        <div className="flex w-[320px] shrink-0 flex-col overflow-hidden border-l-2 border-[rgba(32,30,29,0.4)]">
           {selected ? (
-            <div className="flex flex-1 flex-col overflow-auto px-[18px] pt-[9px] pb-4">
-              <p className="text-[16px] leading-[20.8px] font-semibold text-[#201e1d]">
-                {selected.event_nm}
-              </p>
-              <p className="mt-[3px] text-[11.5px] leading-[17.83px] text-[rgba(27,22,63,0.55)]">
-                {selected.add}
-              </p>
-
-              <div className="mt-4 space-y-[7px] border border-[#e8e4ff] px-3 py-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11.5px] text-[rgba(27,22,63,0.55)]">FAN:GO 평균 후기</span>
-                  <span className="text-[11.5px] font-semibold text-[#201e1d]">
-                    {selected.review_avg ?? '-'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[11.5px] text-[rgba(27,22,63,0.55)]">FAN:GO 평점</span>
-                  <span className="text-[11.5px] font-semibold text-[#201e1d]">
-                    {selected.rating ?? '-'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between border-t border-[rgba(27,22,63,0.2)] pt-[7px]">
-                  <span className="text-[11.3px] font-semibold text-[#201e1d]">relevance(p)</span>
-                  <span className="text-[11.5px] font-bold text-[#6d57fc]">
-                    {selected.total_score}
-                  </span>
+            <div className="flex flex-1 flex-col gap-4 overflow-auto px-[18px] py-3.5">
+              <div className="space-y-1">
+                <p className="text-[11px] text-[rgba(27,22,63,0.6)]">이벤트명/장소명</p>
+                <div className="border border-[rgba(32,30,29,0.4)] bg-[#eae9e9] px-2.5 py-2 text-[12.5px] font-semibold text-[#201e1d]">
+                  {selected.event_nm}
                 </div>
               </div>
 
-              <div className="mt-4 space-y-1.5">
-                <p className="text-[9.5px] font-semibold tracking-[1.14px] text-[rgba(27,22,63,0.5)]">
-                  연관 아티스트
-                </p>
-                <div className="flex flex-wrap gap-[5px]">
-                  {selected.group_nm && (
-                    <span className="bg-[#fff2ef] px-2.5 py-[3px] text-[11px] tracking-[0.22px] text-[#7c1405]">
-                      {selected.group_nm}
-                    </span>
-                  )}
-                  {selected.artist_nm && (
-                    <span className="border border-[#ec3013] px-2.5 py-[2px] text-[11px] tracking-[0.22px] text-[#ec3013]">
-                      {selected.artist_nm}
-                    </span>
-                  )}
-                  {!selected.group_nm && !selected.artist_nm && (
-                    <span className="text-[11px] text-[rgba(27,22,63,0.28)]">-</span>
-                  )}
+              <div className="space-y-1">
+                <p className="text-[11px] text-[rgba(27,22,63,0.6)]">유형</p>
+                <div className="flex divide-x divide-[rgba(32,30,29,0.2)] border border-[rgba(32,30,29,0.4)]">
+                  {typeSegments.map((segment) => (
+                    <div
+                      key={segment}
+                      className={cn(
+                        'flex-1 py-2 text-center text-[11.5px] font-semibold',
+                        segment === selected.ctg_type_nm
+                          ? 'bg-[#6d57fc] text-white'
+                          : 'text-[rgba(32,30,29,0.7)]',
+                      )}
+                    >
+                      {segment}
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              <div className="flex gap-2 pt-6">
+              <div className="space-y-1">
+                <p className="text-[11px] text-[rgba(27,22,63,0.6)]">유형 상세</p>
+                <div className="flex items-center justify-between border border-[rgba(32,30,29,0.4)] bg-[#eae9e9] px-2.5 py-2 text-[12px] text-[#201e1d]">
+                  {selected.ctg_nm}
+                  <ChevronDown className="size-3.5 text-[rgba(32,30,29,0.5)]" />
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <div className="flex-1 space-y-1">
+                  <p className="text-[11px] text-[rgba(27,22,63,0.6)]">시작일</p>
+                  <div className="border border-[rgba(32,30,29,0.4)] bg-[#eae9e9] px-2.5 py-2 text-[12px] text-[#201e1d]">
+                    {formatDate(selected.start_dt)}
+                  </div>
+                </div>
+                <div className="flex-1 space-y-1">
+                  <p className="text-[11px] text-[rgba(27,22,63,0.6)]">종료일</p>
+                  <div className="border border-[rgba(32,30,29,0.4)] bg-[#eae9e9] px-2.5 py-2 text-[12px] text-[#201e1d]">
+                    {formatDate(selected.end_dt)}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-[11px] text-[rgba(27,22,63,0.6)]">주소 (FULL ADDRESS)</p>
+                <div className="border border-[rgba(32,30,29,0.4)] bg-[#eae9e9] px-2.5 py-2 text-[12px] text-[#201e1d]">
+                  {selected.add}
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <div className="flex-1 space-y-1">
+                  <p className="text-[11px] text-[rgba(27,22,63,0.6)]">그룹</p>
+                  <div className="flex items-center justify-between border border-[rgba(32,30,29,0.4)] bg-[#eae9e9] px-2.5 py-2 text-[12px] text-[#201e1d]">
+                    {selected.group_nm ?? '-'}
+                    <ChevronDown className="size-3.5 text-[rgba(32,30,29,0.5)]" />
+                  </div>
+                </div>
+                <div className="flex-1 space-y-1">
+                  <p className="text-[11px] text-[rgba(27,22,63,0.6)]">아티스트</p>
+                  <div className="flex items-center justify-between border border-[rgba(32,30,29,0.4)] bg-[#eae9e9] px-2.5 py-2 text-[12px] text-[#201e1d]">
+                    {selected.artist_nm ?? '-'}
+                    <ChevronDown className="size-3.5 text-[rgba(32,30,29,0.5)]" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-[11px] text-[rgba(27,22,63,0.6)]">상태 (이벤트 전용)</p>
+                <div className="flex divide-x divide-[rgba(32,30,29,0.2)] border border-[rgba(32,30,29,0.4)]">
+                  {statusSegments.map((segment) => (
+                    <div
+                      key={segment}
+                      className={cn(
+                        'flex-1 py-2 text-center text-[11.5px] font-semibold',
+                        segment === selected.op_status_nm ||
+                          (segment === '운영' && selected.op_status_nm === '운영중')
+                          ? 'bg-[#6d57fc] text-white'
+                          : 'text-[rgba(32,30,29,0.7)]',
+                      )}
+                    >
+                      {segment}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-[11px] text-[rgba(27,22,63,0.6)]">운영 메모</p>
+                <div className="min-h-9 border border-[rgba(32,30,29,0.4)] bg-[#eae9e9] px-2.5 py-2 text-[12px] text-[#201e1d]">
+                  {selected.memo ?? '-'}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-[11px] text-[rgba(27,22,63,0.6)]">운영 정보</p>
+                <div className="min-h-9 border border-[rgba(32,30,29,0.4)] bg-[#eae9e9] px-2.5 py-2" />
+              </div>
+
+              <div className="flex gap-2 pt-2">
                 <Button className="flex-1 rounded-full bg-[#6d57fc] hover:bg-[#6d57fc]/90">
                   변경 저장
                 </Button>
                 <Button
                   variant="outline"
-                  className="rounded-full border-[#e8e4ff] bg-[#f8f7ff] text-[#0c0a1c] hover:bg-[#f8f7ff]/70"
+                  className="rounded-full border-[rgba(27,22,63,0.2)] text-[#201e1d] hover:bg-[#f8f7ff]/70"
                 >
                   되돌리기
                 </Button>
