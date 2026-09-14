@@ -26,6 +26,8 @@ interface EventListItem {
   op_status_nm: string
   artist_nm: string | null
   group_nm: string | null
+  review_avg?: number | null
+  rating?: number | null
 }
 
 function formatEventId(no: number) {
@@ -330,81 +332,62 @@ export function PlacesPage() {
           )}
         </div>
 
-        <div className="flex w-[320px] shrink-0 flex-col overflow-hidden border-l-2 border-[rgba(32,30,29,0.4)]">
-          <div className="border-b border-[#e8e4ff] px-[18px] py-3.5">
-            <p className="text-right text-[10.5px] text-[rgba(27,22,63,0.45)]">선택 항목</p>
+        <div className="flex w-[306px] shrink-0 flex-col overflow-hidden border-l-2 border-[rgba(32,30,29,0.4)]">
+          <div className="px-[18px] pt-4">
+            <p className="text-[10px] font-semibold tracking-[1.4px] text-[#6d57fc]">선택 항목</p>
           </div>
           {selected ? (
-            <div className="flex-1 space-y-4 overflow-auto px-[18px] py-3.5">
-              <div className="space-y-1">
-                <p className="text-[11px] text-[rgba(27,22,63,0.6)]">이벤트명/장소명</p>
-                <div className="bg-[#eae9e9] px-2.5 py-2 text-[12.5px] font-semibold text-[#201e1d]">
-                  {selected.event_nm}
-                </div>
-              </div>
+            <div className="flex flex-1 flex-col overflow-auto px-[18px] pt-[9px] pb-4">
+              <p className="text-[16px] leading-[20.8px] font-semibold text-[#201e1d]">
+                {selected.event_nm}
+              </p>
+              <p className="mt-[3px] text-[11.5px] leading-[17.83px] text-[rgba(27,22,63,0.55)]">
+                {selected.add}
+              </p>
 
-              <div className="space-y-1">
-                <p className="text-[11px] text-[rgba(27,22,63,0.6)]">유형</p>
-                <div className="border border-[rgba(32,30,29,0.4)] px-2.5 py-2 text-[11.5px] font-semibold text-[#4c3acd]">
-                  {selected.ctg_type_nm} · {selected.ctg_nm}
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <p className="text-[11px] text-[rgba(27,22,63,0.6)]">연관 아티스트</p>
-                <div
-                  className={cn(
-                    'bg-[#eae9e9] px-2.5 py-2 text-[12px]',
-                    selected.group_nm || selected.artist_nm
-                      ? 'font-semibold text-[#4c3acd]'
-                      : 'text-[rgba(27,22,63,0.4)]',
-                  )}
-                >
-                  {formatArtist(selected)}
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <div className="flex-1 space-y-1">
-                  <p className="text-[11px] text-[rgba(27,22,63,0.6)]">시작일</p>
-                  <div className="bg-[#eae9e9] px-2.5 py-2 text-[12px] text-[#201e1d]">
-                    {formatDate(selected.start_dt)}
-                  </div>
-                </div>
-                <div className="flex-1 space-y-1">
-                  <p className="text-[11px] text-[rgba(27,22,63,0.6)]">종료일</p>
-                  <div className="bg-[#eae9e9] px-2.5 py-2 text-[12px] text-[#201e1d]">
-                    {formatDate(selected.end_dt)}
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <p className="text-[11px] text-[rgba(27,22,63,0.6)]">주소</p>
-                <div className="bg-[#eae9e9] px-2.5 py-2 text-[12px] text-[#201e1d]">
-                  {selected.add}
-                </div>
-              </div>
-
-              <div className="space-y-1.5 border border-[#e8e4ff] px-3 py-2.5">
-                <div className="flex items-baseline justify-between text-[11.5px]">
-                  <span className="text-[rgba(27,22,63,0.55)]">상태</span>
-                  <span
-                    className={cn(
-                      'px-2 py-[3px] text-[10.5px] font-semibold',
-                      statusStyles[selected.op_status_nm] ?? defaultStatusStyle,
-                    )}
-                  >
-                    {selected.op_status_nm}
+              <div className="mt-4 space-y-[7px] border border-[#e8e4ff] px-3 py-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11.5px] text-[rgba(27,22,63,0.55)]">FAN:GO 평균 후기</span>
+                  <span className="text-[11.5px] font-semibold text-[#201e1d]">
+                    {selected.review_avg ?? '-'}
                   </span>
                 </div>
-                <div className="flex items-baseline justify-between border-t border-[rgba(27,22,63,0.2)] pt-1.5 text-[11.3px]">
-                  <span className="font-semibold text-[#201e1d]">외부 리뷰 총점</span>
-                  <span className="font-bold text-[#6d57fc]">{selected.total_score}</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11.5px] text-[rgba(27,22,63,0.55)]">FAN:GO 평점</span>
+                  <span className="text-[11.5px] font-semibold text-[#201e1d]">
+                    {selected.rating ?? '-'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between border-t border-[rgba(27,22,63,0.2)] pt-[7px]">
+                  <span className="text-[11.3px] font-semibold text-[#201e1d]">relevance(p)</span>
+                  <span className="text-[11.5px] font-bold text-[#6d57fc]">
+                    {selected.total_score}
+                  </span>
                 </div>
               </div>
 
-              <div className="flex gap-2 pt-2">
+              <div className="mt-4 space-y-1.5">
+                <p className="text-[9.5px] font-semibold tracking-[1.14px] text-[rgba(27,22,63,0.5)]">
+                  연관 아티스트
+                </p>
+                <div className="flex flex-wrap gap-[5px]">
+                  {selected.group_nm && (
+                    <span className="bg-[#fff2ef] px-2.5 py-[3px] text-[11px] tracking-[0.22px] text-[#7c1405]">
+                      {selected.group_nm}
+                    </span>
+                  )}
+                  {selected.artist_nm && (
+                    <span className="border border-[#ec3013] px-2.5 py-[2px] text-[11px] tracking-[0.22px] text-[#ec3013]">
+                      {selected.artist_nm}
+                    </span>
+                  )}
+                  {!selected.group_nm && !selected.artist_nm && (
+                    <span className="text-[11px] text-[rgba(27,22,63,0.28)]">-</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-6">
                 <Button className="flex-1 rounded-full bg-[#6d57fc] hover:bg-[#6d57fc]/90">
                   변경 저장
                 </Button>
