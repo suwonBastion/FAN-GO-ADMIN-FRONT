@@ -173,7 +173,10 @@ export function PlacesPage() {
                       유형
                     </TableHead>
                     <TableHead className="text-[9.5px] font-semibold tracking-[1.14px] text-[rgba(27,22,63,0.5)] uppercase">
-                      연관 아티스트
+                      유형 상세
+                    </TableHead>
+                    <TableHead className="text-[9.5px] font-semibold tracking-[1.14px] text-[rgba(27,22,63,0.5)] uppercase">
+                      그룹
                     </TableHead>
                     <TableHead className="text-[9.5px] font-semibold tracking-[1.14px] text-[rgba(27,22,63,0.5)] uppercase">
                       시작일
@@ -191,7 +194,7 @@ export function PlacesPage() {
                   {isLoading ? (
                     <TableRow>
                       <TableCell
-                        colSpan={8}
+                        colSpan={9}
                         className="py-6 text-center text-[12px] text-[rgba(27,22,63,0.5)]"
                       >
                         불러오는 중...
@@ -223,12 +226,18 @@ export function PlacesPage() {
                         <TableCell
                           className={cn(
                             'text-[11px]',
-                            event.group_nm || event.artist_nm
-                              ? 'text-[#4c3acd]'
-                              : 'text-[rgba(27,22,63,0.28)]',
+                            event.ctg_nm ? 'text-[rgba(32,30,29,0.75)]' : 'text-[rgba(27,22,63,0.28)]',
                           )}
                         >
-                          {formatArtist(event)}
+                          {event.ctg_nm || '—'}
+                        </TableCell>
+                        <TableCell
+                          className={cn(
+                            'text-[11px]',
+                            event.group_nm ? 'text-[#4c3acd]' : 'text-[rgba(27,22,63,0.28)]',
+                          )}
+                        >
+                          {event.group_nm ?? '—'}
                         </TableCell>
                         <TableCell className="text-[11px] text-[rgba(32,30,29,0.75)]">
                           {formatDate(event.start_dt)}
