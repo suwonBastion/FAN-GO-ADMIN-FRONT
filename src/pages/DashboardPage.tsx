@@ -65,7 +65,7 @@ export function DashboardPage() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['dashboard', period],
     queryFn: async () => {
-      const { data } = await api.get<unknown>('/eventlist/dashboard', {
+      const { data } = await api.get<unknown>('/adminDash/dashboard', {
         params: { days: periodToDays[period] },
       })
       return normalizeDashboard(data)
