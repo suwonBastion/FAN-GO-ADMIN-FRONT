@@ -23,6 +23,14 @@ interface UserListItem {
   trip_route_cnt: number
 }
 
+interface UserTotalStats {
+  total_users: number
+  nationality_pct: number
+  trip_users: number
+  real_trip_pct: number
+  admin: number
+}
+
 type GroupFilter = 'all' | 'has_group' | 'no_group'
 
 function formatUserId(no: number) {
@@ -60,17 +68,26 @@ export function UsersPage() {
     },
   })
 
+  const { data: totalStats } = useQuery({
+    queryKey: ['user-total'],
+    queryFn: async () => {
+      const { data } = await api.get<UserTotalStats[]>('/userList/usertotal')
+      return data[0]
+    },
+  })
+
   const members = data ?? []
 
-  const totalMembers = members.length
-  const withTrips = members.filter((m) => m.trip_route_cnt > 0).length
-  const conversionRate = totalMembers ? Math.round((withTrips / totalMembers) * 100) : 0
+  const totalMembers = totalStats?.total_users ?? members.length
+  const withTrips = totalStats?.trip_users ?? members.filter((m) => m.trip_route_cnt > 0).length
+  const conversionRate =
+    totalStats?.real_trip_pct ?? (totalMembers ? Math.round((withTrips / totalMembers) * 100) : 0)
 
   const kpis = [
     {
       label: '총 회원',
       value: totalMembers.toLocaleString(),
-      delta: '해외 가입 91%',
+      delta: `해외 가입 ${totalStats?.nationality_pct ?? 0}%`,
       tone: 'muted' as const,
     },
     { label: '30일 활성', value: '1,876', delta: '54%', tone: 'muted' as const },
@@ -81,7 +98,12 @@ export function UsersPage() {
       tone: 'delta' as const,
     },
     { label: '탈퇴 · 삭제 요청', value: '2', delta: '30일 내 처리 의무', tone: 'delta' as const },
-    { label: '관리자 계정', value: '6', delta: '4개 역할', tone: 'muted' as const },
+    {
+      label: '관리자 계정',
+      value: (totalStats?.admin ?? 0).toLocaleString(),
+      delta: '운영자 · 관리자 권한',
+      tone: 'muted' as const,
+    },
   ]
 
   const filtered = members.filter((member) => {
