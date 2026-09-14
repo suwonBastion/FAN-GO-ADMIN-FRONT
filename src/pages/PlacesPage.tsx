@@ -66,7 +66,7 @@ export function PlacesPage() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['eventlist'],
     queryFn: async () => {
-      const { data } = await api.get<EventListItem[]>('/adminlogin/eventlist')
+      const { data } = await api.get<EventListItem[]>('/eventList/eventlist')
       return data
     },
   })
