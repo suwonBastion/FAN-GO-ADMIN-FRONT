@@ -39,10 +39,6 @@ interface UserTotalStats {
 
 type GroupFilter = 'all' | 'has_group' | 'no_group'
 
-function formatUserId(no: number) {
-  return `U-${String(no).padStart(5, '0')}`
-}
-
 function formatJoinedAt(value: string | null) {
   if (!value) return '—'
   return value.slice(0, 10)
@@ -293,7 +289,7 @@ export function UsersPage() {
                         className="border-[#efedfa]"
                       >
                         <TableCell className="pl-[22px] text-[11px] text-[rgba(27,22,63,0.55)]">
-                          {formatUserId(member.user_no)}
+                          {member.user_no}
                         </TableCell>
                         <TableCell>
                           <div className="text-[12.5px] font-semibold text-[#201e1d]">
