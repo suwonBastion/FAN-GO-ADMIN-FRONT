@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -28,11 +28,57 @@ interface EventListItem {
   group_nm: string | null
   review_avg?: number | null
   rating?: number | null
-  memo?: string | null
+  event_desc?: string | null
 }
 
-const typeSegments = ['이벤트', '성지', '관광지']
-const statusSegments = ['운영', '검토 대기', '종료']
+interface EventUpdatePayload {
+  event_nm?: string
+  start_dt?: string
+  end_dt?: string
+  add?: string
+  event_desc?: string
+  op_status_no?: number
+  ctg_no?: number
+  artist_no?: number
+  artist_group_no?: number
+}
+
+interface EventUpdateResult {
+  updated_rows?: number
+  msg?: string
+}
+
+interface FormSnapshot {
+  event_nm: string
+  start_dt: string
+  end_dt: string
+  add: string
+  event_desc: string
+  ctg_type_no: number | null
+  ctg_no: number | null
+  artist_group_no: number | null
+  artist_no: number | null
+  op_status_no: number | null
+}
+
+interface CategoryItem {
+  ctg_no: number
+  ctg_nm: string
+  ctg_type_no: number
+  ctg_type_nm: string
+}
+
+interface ArtistItem {
+  artist_no: number
+  artist_nm: string
+  artist_group_no: number
+  group_nm: string
+}
+
+interface OpStatusItem {
+  op_status_no: number
+  op_status_nm: string
+}
 
 function formatEventId(no: number) {
   return `E-${String(no).padStart(4, '0')}`
@@ -71,7 +117,73 @@ export function PlacesPage() {
     },
   })
 
+  const { data: categories } = useQuery({
+    queryKey: ['ctg-list'],
+    queryFn: async () => {
+      const { data } = await api.get<CategoryItem[]>('/ctg/ctg_list')
+      return data
+    },
+  })
+
+  const { data: artists } = useQuery({
+    queryKey: ['artist-list'],
+    queryFn: async () => {
+      const { data } = await api.get<ArtistItem[]>('/artist/artist_list')
+      return data
+    },
+  })
+
+  const { data: opStatuses } = useQuery({
+    queryKey: ['event-status'],
+    queryFn: async () => {
+      const { data } = await api.get<OpStatusItem[]>('/event/status')
+      return data
+    },
+  })
+
   const events = data ?? []
+
+  const typeOptions = useMemo(() => {
+    const seen = new Map<number, string>()
+    for (const c of categories ?? []) {
+      if (!seen.has(c.ctg_type_no)) seen.set(c.ctg_type_no, c.ctg_type_nm)
+    }
+    return Array.from(seen, ([ctg_type_no, ctg_type_nm]) => ({ ctg_type_no, ctg_type_nm }))
+  }, [categories])
+
+  const [formTypeNo, setFormTypeNo] = useState<number | null>(null)
+  const [formCtgNo, setFormCtgNo] = useState<number | null>(null)
+
+  const detailOptions = useMemo(
+    () => (categories ?? []).filter((c) => c.ctg_type_no === formTypeNo),
+    [categories, formTypeNo],
+  )
+
+  const groupOptions = useMemo(() => {
+    const seen = new Map<number, string>()
+    for (const a of artists ?? []) {
+      if (!seen.has(a.artist_group_no)) seen.set(a.artist_group_no, a.group_nm)
+    }
+    return Array.from(seen, ([artist_group_no, group_nm]) => ({ artist_group_no, group_nm }))
+  }, [artists])
+
+  const [formGroupNo, setFormGroupNo] = useState<number | null>(null)
+  const [formArtistNo, setFormArtistNo] = useState<number | null>(null)
+
+  const artistOptions = useMemo(
+    () => (artists ?? []).filter((a) => a.artist_group_no === formGroupNo),
+    [artists, formGroupNo],
+  )
+
+  const [formStatusNo, setFormStatusNo] = useState<number | null>(null)
+  const [formEventNm, setFormEventNm] = useState('')
+  const [formStartDt, setFormStartDt] = useState('')
+  const [formEndDt, setFormEndDt] = useState('')
+  const [formAdd, setFormAdd] = useState('')
+  const [formEventDesc, setFormEventDesc] = useState('')
+
+  const initialFormRef = useRef<FormSnapshot | null>(null)
+  const queryClient = useQueryClient()
 
   const typeFilters = useMemo(() => {
     const uniqueTypes = Array.from(new Set((data ?? []).map((event) => event.ctg_type_nm)))
@@ -90,6 +202,91 @@ export function PlacesPage() {
 
   const selected =
     events.find((event) => event.event_no === selectedNo) ?? filtered[0] ?? events[0]
+
+  const applySelected = () => {
+    if (!selected) return
+    const matchedCtg = categories?.find((c) => c.ctg_nm === selected.ctg_nm)
+    const matchedArtist = artists?.find(
+      (a) => a.artist_nm === selected.artist_nm && a.group_nm === selected.group_nm,
+    )
+    const matchedStatus = opStatuses?.find((s) => s.op_status_nm === selected.op_status_nm)
+
+    const snapshot: FormSnapshot = {
+      event_nm: selected.event_nm,
+      start_dt: selected.start_dt ?? '',
+      end_dt: selected.end_dt ?? '',
+      add: selected.add,
+      event_desc: selected.event_desc ?? '',
+      ctg_type_no: matchedCtg?.ctg_type_no ?? null,
+      ctg_no: matchedCtg?.ctg_no ?? null,
+      artist_group_no: matchedArtist?.artist_group_no ?? null,
+      artist_no: matchedArtist?.artist_no ?? null,
+      op_status_no: matchedStatus?.op_status_no ?? null,
+    }
+
+    setFormEventNm(snapshot.event_nm)
+    setFormStartDt(snapshot.start_dt)
+    setFormEndDt(snapshot.end_dt)
+    setFormAdd(snapshot.add)
+    setFormEventDesc(snapshot.event_desc)
+    setFormTypeNo(snapshot.ctg_type_no)
+    setFormCtgNo(snapshot.ctg_no)
+    setFormGroupNo(snapshot.artist_group_no)
+    setFormArtistNo(snapshot.artist_no)
+    setFormStatusNo(snapshot.op_status_no)
+
+    initialFormRef.current = snapshot
+  }
+
+  useEffect(() => {
+    applySelected()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected, categories, artists, opStatuses])
+
+  const updateMutation = useMutation({
+    mutationFn: async (payload: EventUpdatePayload) => {
+      if (!selected) throw new Error('선택된 항목이 없습니다.')
+      const { data } = await api.patch<EventUpdateResult>(
+        `/eventList/${selected.event_no}`,
+        payload,
+      )
+      return data
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['eventlist'] })
+      alert(result.msg ?? `${result.updated_rows ?? 0}건 저장되었습니다.`)
+    },
+    onError: () => {
+      alert('저장에 실패했습니다.')
+    },
+  })
+
+  const handleSave = () => {
+    if (!selected || !initialFormRef.current) return
+    const initial = initialFormRef.current
+    const payload: EventUpdatePayload = {}
+
+    if (formEventNm !== initial.event_nm) payload.event_nm = formEventNm
+    if (formStartDt !== initial.start_dt) payload.start_dt = formStartDt
+    if (formEndDt !== initial.end_dt) payload.end_dt = formEndDt
+    if (formAdd !== initial.add) payload.add = formAdd
+    if (formEventDesc !== initial.event_desc) payload.event_desc = formEventDesc
+    if (formCtgNo !== null && formCtgNo !== initial.ctg_no) payload.ctg_no = formCtgNo
+    if (formArtistNo !== null && formArtistNo !== initial.artist_no) payload.artist_no = formArtistNo
+    if (formGroupNo !== null && formGroupNo !== initial.artist_group_no) {
+      payload.artist_group_no = formGroupNo
+    }
+    if (formStatusNo !== null && formStatusNo !== initial.op_status_no) {
+      payload.op_status_no = formStatusNo
+    }
+
+    if (Object.keys(payload).length === 0) {
+      alert('변경할 값이 없습니다')
+      return
+    }
+
+    updateMutation.mutate(payload)
+  }
 
   const countFor = (key: string) =>
     key === 'all' ? events.length : events.filter((event) => event.ctg_type_nm === key).length
@@ -350,73 +547,132 @@ export function PlacesPage() {
             <div className="flex flex-1 flex-col gap-4 overflow-auto px-[18px] py-3.5">
               <div className="space-y-1">
                 <p className="text-[11px] text-[rgba(27,22,63,0.6)]">이벤트명/장소명</p>
-                <div className="border border-[rgba(32,30,29,0.4)] bg-[#eae9e9] px-2.5 py-2 text-[12.5px] font-semibold text-[#201e1d]">
-                  {selected.event_nm}
-                </div>
+                <input
+                  value={formEventNm}
+                  onChange={(event) => setFormEventNm(event.target.value)}
+                  className="w-full border border-[rgba(32,30,29,0.4)] bg-[#eae9e9] px-2.5 py-2 text-[12.5px] font-semibold text-[#201e1d]"
+                />
               </div>
 
               <div className="space-y-1">
                 <p className="text-[11px] text-[rgba(27,22,63,0.6)]">유형</p>
                 <div className="flex divide-x divide-[rgba(32,30,29,0.2)] border border-[rgba(32,30,29,0.4)]">
-                  {typeSegments.map((segment) => (
-                    <div
-                      key={segment}
+                  {typeOptions.map((option) => (
+                    <button
+                      key={option.ctg_type_no}
+                      type="button"
+                      onClick={() => {
+                        setFormTypeNo(option.ctg_type_no)
+                        setFormCtgNo(null)
+                      }}
                       className={cn(
                         'flex-1 py-2 text-center text-[11.5px] font-semibold',
-                        segment === selected.ctg_type_nm
+                        option.ctg_type_no === formTypeNo
                           ? 'bg-[#6d57fc] text-white'
                           : 'text-[rgba(32,30,29,0.7)]',
                       )}
                     >
-                      {segment}
-                    </div>
+                      {option.ctg_type_nm}
+                    </button>
                   ))}
                 </div>
               </div>
 
               <div className="space-y-1">
                 <p className="text-[11px] text-[rgba(27,22,63,0.6)]">유형 상세</p>
-                <div className="flex items-center justify-between border border-[rgba(32,30,29,0.4)] bg-[#eae9e9] px-2.5 py-2 text-[12px] text-[#201e1d]">
-                  {selected.ctg_nm}
-                  <ChevronDown className="size-3.5 text-[rgba(32,30,29,0.5)]" />
+                <div className="relative">
+                  <select
+                    value={formCtgNo ?? ''}
+                    onChange={(event) => setFormCtgNo(Number(event.target.value))}
+                    disabled={detailOptions.length === 0}
+                    className="w-full appearance-none border border-[rgba(32,30,29,0.4)] bg-[#eae9e9] px-2.5 py-2 text-[12px] text-[#201e1d]"
+                  >
+                    <option value="" disabled>
+                      선택
+                    </option>
+                    {detailOptions.map((option) => (
+                      <option key={option.ctg_no} value={option.ctg_no}>
+                        {option.ctg_nm}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute top-1/2 right-2.5 size-3.5 -translate-y-1/2 text-[rgba(32,30,29,0.5)]" />
                 </div>
               </div>
 
               <div className="flex gap-2">
                 <div className="flex-1 space-y-1">
                   <p className="text-[11px] text-[rgba(27,22,63,0.6)]">시작일</p>
-                  <div className="border border-[rgba(32,30,29,0.4)] bg-[#eae9e9] px-2.5 py-2 text-[12px] text-[#201e1d]">
-                    {formatDate(selected.start_dt)}
-                  </div>
+                  <input
+                    type="date"
+                    value={formStartDt}
+                    onChange={(event) => setFormStartDt(event.target.value)}
+                    className="w-full border border-[rgba(32,30,29,0.4)] bg-[#eae9e9] px-2.5 py-2 text-[12px] text-[#201e1d]"
+                  />
                 </div>
                 <div className="flex-1 space-y-1">
                   <p className="text-[11px] text-[rgba(27,22,63,0.6)]">종료일</p>
-                  <div className="border border-[rgba(32,30,29,0.4)] bg-[#eae9e9] px-2.5 py-2 text-[12px] text-[#201e1d]">
-                    {formatDate(selected.end_dt)}
-                  </div>
+                  <input
+                    type="date"
+                    value={formEndDt}
+                    onChange={(event) => setFormEndDt(event.target.value)}
+                    className="w-full border border-[rgba(32,30,29,0.4)] bg-[#eae9e9] px-2.5 py-2 text-[12px] text-[#201e1d]"
+                  />
                 </div>
               </div>
 
               <div className="space-y-1">
                 <p className="text-[11px] text-[rgba(27,22,63,0.6)]">주소 (FULL ADDRESS)</p>
-                <div className="border border-[rgba(32,30,29,0.4)] bg-[#eae9e9] px-2.5 py-2 text-[12px] text-[#201e1d]">
-                  {selected.add}
-                </div>
+                <input
+                  value={formAdd}
+                  onChange={(event) => setFormAdd(event.target.value)}
+                  className="w-full border border-[rgba(32,30,29,0.4)] bg-[#eae9e9] px-2.5 py-2 text-[12px] text-[#201e1d]"
+                />
               </div>
 
               <div className="flex gap-2">
                 <div className="flex-1 space-y-1">
                   <p className="text-[11px] text-[rgba(27,22,63,0.6)]">그룹</p>
-                  <div className="flex items-center justify-between border border-[rgba(32,30,29,0.4)] bg-[#eae9e9] px-2.5 py-2 text-[12px] text-[#201e1d]">
-                    {selected.group_nm ?? '-'}
-                    <ChevronDown className="size-3.5 text-[rgba(32,30,29,0.5)]" />
+                  <div className="relative">
+                    <select
+                      value={formGroupNo ?? ''}
+                      onChange={(event) => {
+                        setFormGroupNo(event.target.value ? Number(event.target.value) : null)
+                        setFormArtistNo(null)
+                      }}
+                      className="w-full appearance-none border border-[rgba(32,30,29,0.4)] bg-[#eae9e9] px-2.5 py-2 text-[12px] text-[#201e1d]"
+                    >
+                      <option value="" disabled>
+                        선택
+                      </option>
+                      {groupOptions.map((option) => (
+                        <option key={option.artist_group_no} value={option.artist_group_no}>
+                          {option.group_nm}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute top-1/2 right-2.5 size-3.5 -translate-y-1/2 text-[rgba(32,30,29,0.5)]" />
                   </div>
                 </div>
                 <div className="flex-1 space-y-1">
                   <p className="text-[11px] text-[rgba(27,22,63,0.6)]">아티스트</p>
-                  <div className="flex items-center justify-between border border-[rgba(32,30,29,0.4)] bg-[#eae9e9] px-2.5 py-2 text-[12px] text-[#201e1d]">
-                    {selected.artist_nm ?? '-'}
-                    <ChevronDown className="size-3.5 text-[rgba(32,30,29,0.5)]" />
+                  <div className="relative">
+                    <select
+                      value={formArtistNo ?? ''}
+                      onChange={(event) => setFormArtistNo(Number(event.target.value))}
+                      disabled={artistOptions.length === 0}
+                      className="w-full appearance-none border border-[rgba(32,30,29,0.4)] bg-[#eae9e9] px-2.5 py-2 text-[12px] text-[#201e1d]"
+                    >
+                      <option value="" disabled>
+                        선택
+                      </option>
+                      {artistOptions.map((option) => (
+                        <option key={option.artist_no} value={option.artist_no}>
+                          {option.artist_nm}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute top-1/2 right-2.5 size-3.5 -translate-y-1/2 text-[rgba(32,30,29,0.5)]" />
                   </div>
                 </div>
               </div>
@@ -424,28 +680,32 @@ export function PlacesPage() {
               <div className="space-y-1">
                 <p className="text-[11px] text-[rgba(27,22,63,0.6)]">상태 (이벤트 전용)</p>
                 <div className="flex divide-x divide-[rgba(32,30,29,0.2)] border border-[rgba(32,30,29,0.4)]">
-                  {statusSegments.map((segment) => (
-                    <div
-                      key={segment}
+                  {(opStatuses ?? []).map((option) => (
+                    <button
+                      key={option.op_status_no}
+                      type="button"
+                      onClick={() => setFormStatusNo(option.op_status_no)}
                       className={cn(
                         'flex-1 py-2 text-center text-[11.5px] font-semibold',
-                        segment === selected.op_status_nm ||
-                          (segment === '운영' && selected.op_status_nm === '운영중')
+                        option.op_status_no === formStatusNo
                           ? 'bg-[#6d57fc] text-white'
                           : 'text-[rgba(32,30,29,0.7)]',
                       )}
                     >
-                      {segment}
-                    </div>
+                      {option.op_status_nm}
+                    </button>
                   ))}
                 </div>
               </div>
 
               <div className="space-y-1">
                 <p className="text-[11px] text-[rgba(27,22,63,0.6)]">운영 메모</p>
-                <div className="min-h-9 border border-[rgba(32,30,29,0.4)] bg-[#eae9e9] px-2.5 py-2 text-[12px] text-[#201e1d]">
-                  {selected.memo ?? '-'}
-                </div>
+                <textarea
+                  value={formEventDesc}
+                  onChange={(event) => setFormEventDesc(event.target.value)}
+                  rows={2}
+                  className="min-h-9 w-full border border-[rgba(32,30,29,0.4)] bg-[#eae9e9] px-2.5 py-2 text-[12px] text-[#201e1d]"
+                />
               </div>
 
               <div className="space-y-1">
@@ -454,11 +714,16 @@ export function PlacesPage() {
               </div>
 
               <div className="flex gap-2 pt-2">
-                <Button className="flex-1 rounded-full bg-[#6d57fc] hover:bg-[#6d57fc]/90">
-                  변경 저장
+                <Button
+                  onClick={handleSave}
+                  disabled={updateMutation.isPending}
+                  className="flex-1 rounded-full bg-[#6d57fc] hover:bg-[#6d57fc]/90"
+                >
+                  {updateMutation.isPending ? '저장 중...' : '변경 저장'}
                 </Button>
                 <Button
                   variant="outline"
+                  onClick={applySelected}
                   className="rounded-full border-[rgba(27,22,63,0.2)] text-[#201e1d] hover:bg-[#f8f7ff]/70"
                 >
                   되돌리기
