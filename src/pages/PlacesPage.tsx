@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { NewEventDialog } from '@/components/NewEventDialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -108,6 +109,7 @@ export function PlacesPage() {
   const [type, setType] = useState('all')
   const [selectedNo, setSelectedNo] = useState<number | null>(null)
   const [page, setPage] = useState(1)
+  const [isNewEventOpen, setIsNewEventOpen] = useState(false)
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['eventlist'],
@@ -321,9 +323,22 @@ export function PlacesPage() {
             placeholder="이벤트명 · 장소명 · 주소 검색"
             className="h-9 w-[220px] rounded-none border-[rgba(32,30,29,0.4)] bg-[#eae9e9]"
           />
-          <Button className="rounded-full bg-[#6d57fc] hover:bg-[#6d57fc]/90">＋ 신규 등록</Button>
+          <Button
+            onClick={() => setIsNewEventOpen(true)}
+            className="rounded-full bg-[#6d57fc] hover:bg-[#6d57fc]/90"
+          >
+            ＋ 신규 등록
+          </Button>
         </div>
       </div>
+
+      <NewEventDialog
+        open={isNewEventOpen}
+        onOpenChange={setIsNewEventOpen}
+        categories={categories ?? []}
+        artists={artists ?? []}
+        opStatuses={opStatuses ?? []}
+      />
 
       <div className="flex items-center justify-between border-b border-[#e8e4ff] px-[22px]">
         <div className="flex">
